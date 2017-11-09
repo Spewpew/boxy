@@ -1,4 +1,4 @@
 bin_PROGRAMS=boxy
-boxy_SOURCES=main.c
+boxy_SOURCES=main.c boxy.h
 boxy_CFLAGS=$(SDL2_CFLAGS) $(SDL2_IMAGE_CFLAGS) 
 boxy_LDADD=$(SDL2_LIBS) $(SDL2_IMAGE_LIBS) 
