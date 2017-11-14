@@ -508,8 +508,21 @@ static Uint8 geta(SDL_Surface*sur,Uint32 x,Uint32 y){
 	return a;
 }
 
+static void stripes_h_over_fill(struct stripes*s,Uint32 w,Uint32 y,Uint32 start,Uint32 over){
+	do{
+		s->i[start+y*w].h_over=over;
+	}while(++start<over);
+}
+
+static void stripes_v_over_fill(struct stripes*s,Uint32 w,Uint32 x,Uint32 start,Uint32 over){
+	do{
+		s->i[x+start*w].v_over=over;
+	}while(++start<over);
+}
+
 static int stripes_scan(struct stripes**s,SDL_Surface*sur,const struct atlas_record r){
-	s[0]->n=0;
+	//~ s[0]->n=0;
+	//~ ilog("%"PRIu32",%"PRIu32",%"PRIu32",%"PRIu32,r.x,r.y,r.w,r.h);
 	switch(stripes_occupy(s,r.w*r.h)){
 		case stripes_occupy_ok:
 			break;
@@ -530,12 +543,27 @@ static int stripes_scan(struct stripes**s,SDL_Surface*sur,const struct atlas_rec
 l_con1:		start=x;
 			do{
 				s[0]->i[x+y*r.w].empty=0;
-				if(++x==r.w)
+				if(++x==r.w){
+					stripes_h_over_fill(s[0],r.w,y,start,x);
 					goto l_con0;
+				}
+				//~ if(x+1==r.w){
+					//~ s[0]->i[x+y*r.w].h_over=r.w;
+					//~ ++x;
+					//~ goto l_con0;
+				//~ }
 				a=geta(sur,x+r.x,y+r.y);
 			}while(a>=r.omin && a<=r.omax);
-			for(Uint32 tx=x-1;tx>=start;--tx)
-				s[0]->i[tx+y*r.w].h_over=x;
+			stripes_h_over_fill(s[0],r.w,y,start,x);
+			//~ Uint32 tx=x-1;
+			//~ while(1){
+				//~ s[0]->i[tx+y*r.w].h_over=x;
+				//~ if(tx==start)
+					//~ break;
+				//~ tx--;
+			//~ }
+			//~ for(Uint32 tx=x-1;tx>=start;--tx)
+				//~ s[0]->i[tx+y*r.w].h_over=x;
 		}
 		start=x;
 		do{
@@ -557,11 +585,21 @@ l_con0:;
 			if(!s[0]->i[x+y*r.w].empty){
 				start=y;
 				do{
-					if(++y==r.h)
+					if(++y==r.h){
+						stripes_v_over_fill(s[0],r.w,x,start,y);
 						goto l_con2;
+					}
 				}while(!s[0]->i[x+y*r.w].empty);
-				for(Uint32 ty=y-1;ty>=start;--ty)
-					s[0]->i[x+ty*r.w].v_over=y;
+				stripes_v_over_fill(s[0],r.w,x,start,y);
+				//~ Uint32 ty=y-1;
+				//~ while(1){
+					//~ s[0]->i[x+ty*r.w].v_over=y;
+					//~ if(ty==start)
+						//~ break;
+					//~ ty--;
+				//~ }
+				//~ for(Uint32 ty=y-1;ty>=start;--ty)
+					//~ s[0]->i[x+ty*r.w].v_over=y;
 			}
 		}while(++y!=r.h);
 l_con2:;
@@ -569,64 +607,145 @@ l_con2:;
 	return 1;
 }
 
-//~ enum getnotoverlapped2_result{
-	//~ getnotoverlapped2_none,
-	//~ getnotoverlapped2_one,
-	//~ getnotoverlapped2_split
-//~ };
-
-//~ static getnotoverlapped2_result getnotoverlapped2(
-//~ Uint32 *ph_over1,Uint32 *pv_over1,Uint32 *ph_over2,Uint32 *pv_over2,
-//~ struct boxyhitboxes*b,Uint64 l,Uint32 x,Uint32 y,Uint32 h_over,Uint32 v_over){
-	//~ for(;l<b->n_boxes;++l){
-		//~ if(
-	//~ }
-//~ }
-
-static int getnotoverlapped(Uint32 *ph_over,Uint32 *pv_over,
-struct boxyhitboxes*b,Uint32 x,Uint32 y,Uint32 h_over,Uint32 v_over){
-	for(Uint64 l=0;l<b->n_boxes;++l){
-		if(y>=b->boxes[l].y && y<b->boxes[l].y+b->boxes[l].h){
-			if(x>=b->boxes[l].x && x<b->boxes[l].x+b->boxes[l].w)
-				return 0;
-			if(x<b->boxes[l].x && h_over>b->boxes[l].x){
-				h_over=b->boxes[l].x;
-			}
-		}else if(y<b->boxes[l].y && v_over>b->boxes[l].y &&
-				x>=b->boxes[l].x && x<b->boxes[l].x+b->boxes[l].w){
-			v_over=b->boxes[l].y;
-		}
-	}
-	*ph_over=h_over;
-	*pv_over=v_over;
-	return 1;
+loe::list(arearects){
+	::index_type{Uint64};
+	::length{n};
+	::queue{q};
+	::array{{typeof(((struct arearects*)0)->i[0])}{i}};
+	::allstatic;
+	::first{first};
+	::last{last};
+	::prev{prev};
+	::next{next};
+	::item{{struct arearects_rect}{rect}};
+	::efirst{efirst};
+	::elast{elast};
+	::eprev{eprev};
+	::enext{enext};
+	Uint64 n,q;
+	Uint64 first,last,efirst,elast;
+	Uint32 x_origin,y_origin;
+	struct{
+		Uint64 prev,next,eprev,enext;
+		struct arearects_rect{
+			Uint32 x,h_over,v_over;
+		}rect;
+	}i[];
 }
 
-static void getmaxrect(Uint32 *nw,Uint32 *nh,struct boxyhitboxes*b,
-struct stripes*s,Uint32 w,Uint32 sx,Uint32 sy,Uint32 h_over,Uint32 v_over){
+static void arearects_cut(struct arearects*a,Uint64 i){
+	Uint64 l=a->last;
+	while(1){
+		arearects_remove(a,l);
+		if(l==i)
+			break;
+		l=a->last;
+	}
+}
+
+static enum arearects_occupy_result areascan(struct arearects**a,
+struct stripes*s,Uint32 sw,Uint32 sx,Uint32 h_over,Uint32 v_over){
 	for(Uint32 x=sx+1;x<h_over;++x){
-		if(s->i[x+sy*w].v_over<v_over){
-			Uint32 sv_over,sh_over;
-			if(getnotoverlapped(&sh_over,&sv_over,b,x,sy,h_over,s->i[x+sy*w].v_over)){
-				Uint32 rw,rh;
-				getmaxrect(&rw,&rh,b,s,w,x,sy,sh_over,sv_over);
-				if((rw+x-sx)*rh<(x-sx)*(v_over-sy)){
-					*nw=x-sx;
-					*nh=v_over-sy;
-				}else{
-					*nw=rw+x-sx;
-					*nh=rh;
-				}
-				return;
-			}
+		if(s->i[x+sw*a[0]->y_origin].v_over<v_over){
+			//~ if(a[0]->y_origin==91 && a[0]->x_origin==101){
+				//~ ilog("inside: %"PRIu32",%"PRIu32",%"PRIu32,sx,x,v_over);
+			//~ }
+			enum arearects_occupy_result e=arearects_append(a,(struct arearects_rect){
+				.x=sx,.h_over=x,.v_over=v_over
+			});
+			if(e!=arearects_occupy_ok)
+				return e;
+			return areascan(a,s,sw,x,h_over,s->i[x+sw*a[0]->y_origin].v_over);
 		}
 	}
-	*nw=h_over-sx;
-	*nh=v_over-sy;
-	return;
+	//~ if(a[0]->y_origin==91 && a[0]->x_origin==101){
+		//~ ilog("outside: %"PRIu32",%"PRIu32",%"PRIu32,sx,h_over,v_over);
+	//~ }
+	return arearects_append(a,(struct arearects_rect){
+		.x=sx,.h_over=h_over,.v_over=v_over
+	});
 }
 
-static int boxyhitboxes_scan(struct boxyhitboxes**ph,Uint64 *pq,struct stripes*s,
+static void arearects_v_over_lowered(struct arearects*a,Uint64 i,Uint32 v_over){
+	while(1){
+		if(a->i[i].rect.v_over>v_over)
+			a->i[i].rect.v_over=v_over;
+		if(i==a->last)
+			break;
+		i=a->i[i].next;
+	}
+}
+
+static enum arearects_occupy_result arearects_insert(struct arearects**a,
+Uint64 after,struct arearects_rect r){
+	enum arearects_occupy_result e=arearects_append(a,r);
+	if(e==arearects_occupy_ok){
+		if(a[0]->i[after].next!=a[0]->last)
+			arearects_swap(a[0],a[0]->last,a[0]->i[after].next);
+	}
+	return e;
+}
+
+static enum arearects_occupy_result getmaxrect(Uint32 *nw,Uint32 *nh,
+struct arearects**a,struct boxyhitboxes*b){
+	Uint64 l=0;
+	for(;l<b->n_boxes;++l){
+		Uint64 m=a[0]->first;
+		while(1){
+			if(
+				a[0]->y_origin<b->boxes[l].y+b->boxes[l].h &&
+				a[0]->i[m].rect.v_over>b->boxes[l].y &&
+				a[0]->i[m].rect.x<b->boxes[l].x+b->boxes[l].w &&
+				a[0]->i[m].rect.h_over>b->boxes[l].x
+			){
+				if(a[0]->i[m].rect.x>=b->boxes[l].x){
+					if(a[0]->y_origin>=b->boxes[l].y){
+						arearects_cut(a[0],m);
+						break;
+					}
+					arearects_v_over_lowered(a[0],m,b->boxes[l].y);
+				}else{
+					if(a[0]->y_origin>=b->boxes[l].y){
+						if(m!=a[0]->last)
+							arearects_cut(a[0],a[0]->i[m].next);
+						a[0]->i[m].rect.h_over=b->boxes[l].x;
+						break;
+					}
+					enum arearects_occupy_result e=arearects_insert(a,m,(struct arearects_rect){
+						.x=b->boxes[l].x,.h_over=a[0]->i[m].rect.h_over,.v_over=b->boxes[l].y
+					});
+					if(e!=arearects_occupy_ok)
+						return e;
+					a[0]->i[m].rect.h_over=b->boxes[l].x;
+					arearects_v_over_lowered(a[0],a[0]->i[m].next,b->boxes[l].y);
+				}
+			}
+			if(m==a[0]->last)
+				break;
+			m=a[0]->i[m].next;
+		}
+		if(!a[0]->n)
+			break;
+	}
+	Uint32 mw=0,mh=0;
+	if(a[0]->n>0){
+		l=a[0]->first;
+		while(1){
+			if((a[0]->i[l].rect.h_over-a[0]->x_origin)*(a[0]->i[l].rect.v_over-a[0]->y_origin)>mh*mw){
+				mw=a[0]->i[l].rect.h_over-a[0]->x_origin;
+				mh=a[0]->i[l].rect.v_over-a[0]->y_origin;
+			}
+			if(l==a[0]->last)
+				break;
+			l=a[0]->i[l].next;
+		}
+	}
+	*nw=mw;
+	*nh=mh;
+	return arearects_occupy_ok;
+}
+
+static int boxyhitboxes_scan(struct boxyhitboxes**ph,Uint64 *pq,struct stripes*s,struct arearects**a,
 Uint32 w,Uint32 h){
 	Sint64 lzx=w,lzy=h,lzox= -1,lzoy= -1;
 	do{
@@ -640,17 +759,38 @@ Uint32 w,Uint32 h){
 					x=s->i[x+y*w].h_empty_over;
 				if(x==w)
 					break;
-				Uint32 h_over,v_over;
-				if(getnotoverlapped(&h_over,&v_over,ph[0],x,y,s->i[x+y*w].h_over,s->i[x+y*w].v_over)){
-					Uint32 rw,rh;
-					getmaxrect(&rw,&rh,ph[0],s,w,x,y,h_over,v_over);
-					if(max.w*max.h<rw*rh){
-						max.x=x;
-						max.y=y;
-						max.w=rw;
-						max.h=rh;
-					}
+				a[0]->x_origin=x;
+				a[0]->y_origin=y;
+				//~ if(x==101 && y==91){
+					//~ ilog("n=%"PRIu64,a[0]->n);
+				//~ }
+				if(areascan(a,s,w,x,s->i[x+y*w].h_over,s->i[x+y*w].v_over)!=arearects_occupy_ok)
+					return 0;
+				//~ if(x==101 && y==91){
+					//~ ilog("areascan_start:");
+					//~ Uint64 k=a[0]->first;
+					//~ while(1){
+						//~ ilog("%"PRIu32",%"PRIu32",%"PRIu32,a[0]->i[k].rect.x,a[0]->i[k].rect.h_over,a[0]->i[k].rect.v_over);
+						//~ if(k==a[0]->last)
+							//~ break;
+						//~ k=a[0]->i[k].next;
+					//~ }
+					//~ ilog("areascan_end");
+				//~ }
+				Uint32 nw,nh;
+				if(getmaxrect(&nw,&nh,a,ph[0])!=arearects_occupy_ok)
+					return 0;
+				SDL_assert(nw<=512 && nh<=512);
+				if(max.w*max.h<nw*nh){
+					max.x=x;
+					max.y=y;
+					max.w=nw;
+					max.h=nh;
 				}
+				if(a[0]->n>0)
+					arearects_cut(a[0],a[0]->first);
+				//~ if(++x==w)
+					//~ break;
 			}while(++x!=w);
 		}while(++y<h);
 		if(!max.w){
@@ -665,6 +805,8 @@ Uint32 w,Uint32 h){
 				lzy=max.y<lzy?max.y:lzy;
 				lzox=max.x+max.w>lzox?max.x+max.w:lzox;
 				lzoy=max.y+max.h>lzoy?max.y+max.h:lzoy;
+				ilog("%"PRIu32",%"PRIu32",%"PRIu32",%"PRIu32,max.x,max.y,max.w,max.h);
+				SDL_assert(0);
 				break;
 			}
 			case boxyhitboxes_occupy_overflow_error:{
@@ -702,10 +844,18 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		boxyheader_free(bh);
 		return 0;
 	}
+	struct arearects*a=arearects_list_new(127);
+	if(!a){
+		stripes_free(s);
+		boxyhitboxes_free(hb);
+		boxyheader_free(bh);
+		return 0;
+	}
 	if(opt_no_sparse==SET_INI_TRUE){
 		if(SDL_RWwrite(boxy,SDL_memset(bh,0,sizeof(*bh)+8*pool->n),
 				sizeof(*bh)+8*pool->n,1)!=1){
 			esdl;
+			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
 			boxyheader_free(bh);
@@ -713,6 +863,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		}
 	}else if(SDL_RWseek(boxy,sizeof(*bh)+8*pool->n,RW_SEEK_SET)==-1){
 		esdl;
+		arearects_free(a);
 		stripes_free(s);
 		boxyhitboxes_free(hb);
 		boxyheader_free(bh);
@@ -720,6 +871,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 	}
 	if(printrw(enumfile,"#ifndef __%s_INCLUDED\n#define %s_INCLUDED\nenum %s{",
 		prefix,prefix,prefix)!=printrw_ok){
+		arearects_free(a);
 		stripes_free(s);
 		boxyhitboxes_free(hb);
 		boxyheader_free(bh);
@@ -729,6 +881,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 	SDL_Surface *osur=SDL_CreateRGBSurface(0,sur->w,sur->h,32,0xff,0xff00,0xff0000,0xff000000);
 	if(!osur){
 		esdl;
+		arearects_free(a);
 		stripes_free(s);
 		boxyhitboxes_free(hb);
 		boxyheader_free(bh);
@@ -738,12 +891,14 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 	Uint64 l=0,hbque=127,bhque=pool->n,offset=0;
 	while(1){
 		if(!stripes_scan(&s,sur,pool->i[l])){
+			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
 			boxyheader_free(bh);
 			return 0;
 		}
-		if(!boxyhitboxes_scan(&hb,&hbque,s,pool->i[l].w,pool->i[l].h)){
+		if(!boxyhitboxes_scan(&hb,&hbque,s,&a,pool->i[l].w,pool->i[l].h)){
+			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
 			boxyheader_free(bh);
@@ -775,12 +930,14 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		};
 		if(SDL_RWwrite(boxy,hb,sizeof(*hb)+sizeof(hb->boxes[0])*hb->n_boxes,1)!=1){
 			esdl;
+			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
 			boxyheader_free(bh);
 			return 0;
 		}
 		if(printrw(enumfile,"\n\t%s_%s,",prefix,pool->i[l].id->i)!=printrw_ok){
+			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
 			boxyheader_free(bh);
@@ -795,6 +952,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 			};
 			if(SDL_FillRect(osur,&rc,0xff000000+(getrand()&0xffffff))<0){
 				esdl;
+				arearects_free(a);
 				stripes_free(s);
 				boxyhitboxes_free(hb);
 				boxyheader_free(bh);
@@ -806,13 +964,16 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 			break;
 		if(__builtin_add_overflow(offset,sizeof(*hb)+sizeof(hb->boxes[0])*hb->n_boxes,&offset)){
 			clog("overflow");
+			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
 			boxyheader_free(bh);
 			return 0;
 		}
 		hb->n_boxes=0;
+		s->n=0;
 	}
+	arearects_free(a);
 	stripes_free(s);
 	boxyhitboxes_free(hb);
 #ifdef _DEBUGIMAGE

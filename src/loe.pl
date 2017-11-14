@@ -1443,11 +1443,17 @@ sub loelist_compose_definitions($$$){
 		$t->{index_type} nm= $que;
 		do{
 			if(__builtin_mul_overflow(nm,2,&nm)){
-				nm= -1<0?(1<<(sizeof(nm)*8-2))-1+(1<<(sizeof(nm)*8-2)):-1;
+				nm= -1<0?((typeof(nm))1<<(sizeof(nm)*8-2))-1+((typeof(nm))1<<(sizeof(nm)*8-2)):-1;
 				break;
 			}
 		}while(nl>nm);
-		struct $prefix*ns=LOE_STACK_REALLOC(ps[0],sizeof(*ns)+sizeof(${$t->{array}}[0])*nm);
+		size_t rsz;
+		if(__builtin_mul_overflow(nm,sizeof(${$t->{array}}[0]),&rsz) ||
+			__builtin_add_overflow(rsz,sizeof(struct $prefix),&rsz)){
+			LOE_STACK_LOG_OVERFLOW_ERROR;
+			return $prefix\_occupy_overflow_error;
+		}
+		struct $prefix*ns=LOE_STACK_REALLOC(ps[0],rsz);
 		if(!ns){
 			LOE_STACK_LOG_CRITICAL_REALLOC_ERROR;
 			return $prefix\_occupy_critical_realloc_error;
