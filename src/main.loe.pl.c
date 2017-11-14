@@ -8,9 +8,9 @@ loe::replace({SET_INI_UINT64},{Uint64});
 loe::replace({LOE_STACK_MALLOC},{SDL_malloc});
 loe::replace({LOE_STACK_REALLOC},{SDL_realloc});
 loe::replace({LOE_STACK_FREE},{SDL_free});
-loe::replace({LOE_STACK_LOG_OVERFLOW_ERROR},{clog("overflow")});
-loe::replace({LOE_STACK_LOG_CRITICAL_MALLOC_ERROR},{clog("malloc")});
-loe::replace({LOE_STACK_LOG_CRITICAL_REALLOC_ERROR},{clog("realloc")});
+loe::replace({LOE_STACK_LOG_OVERFLOW_ERROR},{clog("Переизбыток данных.")});
+loe::replace({LOE_STACK_LOG_CRITICAL_MALLOC_ERROR},{clog("Выделение памяти.")});
+loe::replace({LOE_STACK_LOG_CRITICAL_REALLOC_ERROR},{clog("Перевыделение памяти.")});
 loe::replace({LOE_STACK_ASSERT},{SDL_assert});
 
 #include "config.h"
@@ -105,6 +105,32 @@ loe::stack(boxyhitboxes){
 	}__attribute__((packed)) frame,lazy,boxes[];
 }
 
+loe::list(arearects){
+	::index_type{Uint64};
+	::length{n};
+	::queue{q};
+	::array{{typeof(((struct arearects*)0)->i[0])}{i}};
+	::allstatic;
+	::first{first};
+	::last{last};
+	::prev{prev};
+	::next{next};
+	::item{{struct arearects_rect}{rect}};
+	::efirst{efirst};
+	::elast{elast};
+	::eprev{eprev};
+	::enext{enext};
+	Uint64 n,q;
+	Uint64 first,last,efirst,elast;
+	Uint32 x_origin,y_origin;
+	struct{
+		Uint64 prev,next,eprev,enext;
+		struct arearects_rect{
+			Uint32 x,h_over,v_over;
+		}rect;
+	}i[];
+}
+
 enum slurpfile_result{
 	slurpfile_ok,slurpfile_error,slurpfile_critical_error
 };
@@ -156,7 +182,7 @@ static int slurpfile(struct string**s,const char*f){
 	}
 	size_t a;
 	if(__builtin_add_overflow(z,1,&a)){
-		elog("toobig('%s')",f);
+		elog("Файл слишком большой ('%s').",f);
 		SDL_RWclose(r);
 		return slurpfile_error;
 	}
@@ -165,18 +191,18 @@ static int slurpfile(struct string**s,const char*f){
 		case string_occupy_ok:
 			break;
 		case string_occupy_overflow_error:{
-			clog("toobig('%s')",f);
+			clog("Файл слишком большой ('%s').",f);
 			SDL_RWclose(r);
 			return slurpfile_error;
 		}
 		case string_occupy_critical_realloc_error:{
-			clog("realloc('%s')",f);
+			clog("Перевыделение памяти для содержимого файла ('%s').",f);
 			SDL_RWclose(r);
 			return slurpfile_critical_error;
 		}
 	}
 	if(SDL_RWread(r,s[0]->i,1,z)!=z){
-		elog("rwread('%s'),SDL_GetError(): '%s'.",f,SDL_GetError());
+		elog("Чтение файла '%s'; SDL_GetError(): '%s'.",f,SDL_GetError());
 		SDL_RWclose(r);
 		return slurpfile_error;
 	}
@@ -230,7 +256,7 @@ SET_INI_INT64 i,enum SET_INI_TYPE t,const void*udata){
 							*((Uint32*)(((ptrdiff_t)&(pool->i[l]))+a->offset))=i;
 							pool->i[l].ok|=a->ok;
 						}else{
-							elog("[%.*s] %.*s - out of the range[0..4294967295]",(int)gz,gn,(int)kz,kn);
+							elog("[%.*s] %.*s - вне диапазона[0..4294967295]",(int)gz,gn,(int)kz,kn);
 							opt_syntax_error=SET_INI_TRUE;
 						}
 						break;
@@ -241,7 +267,7 @@ SET_INI_INT64 i,enum SET_INI_TYPE t,const void*udata){
 							*((Uint32*)(((ptrdiff_t)&(pool->i[l]))+a->offset))=i;
 							pool->i[l].ok|=a->ok;
 						}else{
-							elog("[%.*s] %.*s - out of the range[1..4294967295]",(int)gz,gn,(int)kz,kn);
+							elog("[%.*s] %.*s - вне диапазона[1..4294967295]",(int)gz,gn,(int)kz,kn);
 							opt_syntax_error=SET_INI_TRUE;
 						}
 						break;
@@ -251,23 +277,23 @@ SET_INI_INT64 i,enum SET_INI_TYPE t,const void*udata){
 						if(i>=0 && i<=255){
 							*((Uint8*)(((ptrdiff_t)&(pool->i[l]))+a->offset))=i;
 						}else{
-							elog("[%.*s] %.*s - out of the range[0..255]",(int)gz,gn,(int)kz,kn);
+							elog("[%.*s] %.*s - вне диапазона[0..255]",(int)gz,gn,(int)kz,kn);
 							opt_syntax_error=SET_INI_TRUE;
 						}
 						break;
 					}
 				}
 			}else{
-				elog("[%.*s] %.*s - type mismatch",(int)gz,gn,(int)kz,kn);
+				elog("[%.*s] %.*s - неверный тип",(int)gz,gn,(int)kz,kn);
 				opt_syntax_error=SET_INI_TRUE;
 			}
 		}else{
-			elog("[%.*s] %.*s - unknown attribute",(int)gz,gn,(int)kz,kn);
+			elog("[%.*s] %.*s - неизвестный атрибут",(int)gz,gn,(int)kz,kn);
 			opt_syntax_error=SET_INI_TRUE;
 		}
 #undef pool
 	}else{
-		elog("%.*s - unknown option",(int)kz,kn);
+		elog("%.*s - неизвестная опция",(int)kz,kn);
 		opt_syntax_error=SET_INI_TRUE;
 	}
 	return SET_INI_TRUE;
@@ -285,7 +311,7 @@ const void*udata){
 #undef pool
 	struct string*s=string_new(gz+1);
 	if(!s){
-		clog("malloc");
+		clog("Выделение памяти.");
 		return SET_INI_FALSE;
 	}
 	string_occupy(&s,gz+1);
@@ -297,11 +323,11 @@ const void*udata){
 		case atlas_occupy_ok:
 			break;
 		case atlas_occupy_overflow_error:{
-			clog("overflow");
+			clog("Переизбыток данных.");
 			return SET_INI_FALSE;
 		}
 		case atlas_occupy_critical_realloc_error:{
-			clog("realloc");
+			clog("Перевыделение памяти.");
 			return SET_INI_FALSE;
 		}
 	}
@@ -324,7 +350,7 @@ set::ini_info(opt){
 					if(t==SET_INI_TYPE_BOOLEAN){
 						k->bool.pb[0]=SET_INI_TRUE;
 					}else{
-						elog("%.*s - type mismatch",(int)kz,kn);
+						elog("%.*s - неверный тип",(int)kz,kn);
 						opt_syntax_error=SET_INI_TRUE;
 					}
 					return SET_INI_TRUE;
@@ -348,11 +374,11 @@ set::ini_info(opt){
 								case string_occupy_ok:
 									break;
 								case string_occupy_overflow_error:{
-									clog("overflow");
+									clog("Переизбыток данных.");
 									return SET_INI_FALSE;
 								}
 								case string_occupy_critical_realloc_error:{
-									clog("realloc");
+									clog("Перевыделение памяти.");
 									return SET_INI_FALSE;
 								}
 							}
@@ -360,7 +386,7 @@ set::ini_info(opt){
 						SDL_memcpy(k->str.ps[0]->i,v,vz);
 						k->str.ps[0]->i[vz]='\0';
 					}else{
-						elog("%.*s - type mismatch",(int)kz,kn);
+						elog("%.*s - неверный тип.",(int)kz,kn);
 						opt_syntax_error=SET_INI_TRUE;
 					}
 					return SET_INI_TRUE;
@@ -383,11 +409,11 @@ set::ini_info(opt){
 												break;
 											}
 											case SET_INI_PARSER_CANCELLED:{
-												clog("ini-parse('%.*s')",(int)vz,v);
+												clog("При сканировании файла '%.*s'.",(int)vz,v);
 												return SET_INI_FALSE;
 											}
 											case SET_INI_PARSER_UTF8_ERROR:{
-												elog("utf-8-error('%.*s')",(int)vz,v);
+												elog("Ошибка UTF-8 кодировки '%.*s'.",(int)vz,v);
 												opt_syntax_error=SET_INI_TRUE;
 												break;
 											}
@@ -395,27 +421,27 @@ set::ini_info(opt){
 										break;
 									}
 									case slurpfile_error:{
-										elog("slurpfile");
+										elog("slurpfile здесь.");
 										break;
 									}
 									case slurpfile_critical_error:{
-										clog("slurpfile");
+										clog("slurpfile здесь.");
 										return SET_INI_FALSE;
 									}
 								}
 								break;
 							}
 							case string_occupy_overflow_error:{
-								clog("overflow");
+								clog("Переизбыток данных.");
 								return SET_INI_FALSE;
 							}
 							case string_occupy_critical_realloc_error:{
-								clog("realloc");
+								clog("Перевыделение памяти.");
 								return SET_INI_FALSE;
 							}
 						}
 					}else{
-						elog("%.*s - type mismatch",(int)kz,kn);
+						elog("%.*s - неверный тип.",(int)kz,kn);
 						opt_syntax_error=SET_INI_TRUE;
 					}
 					return SET_INI_TRUE;
@@ -431,11 +457,11 @@ set::ini_info(opt){
 						if(i>=0 && i<=255){
 							k->opacity.po[0]=i;
 						}else{
-							elog("%.*s - out of the range.",(int)kz,kn);
+							elog("%.*s - вне диапазона.",(int)kz,kn);
 							opt_syntax_error=SET_INI_TRUE;
 						}
 					}else{
-						elog("%.*s - type mismatch",(int)kz,kn);
+						elog("%.*s - неверный тип.",(int)kz,kn);
 						opt_syntax_error=SET_INI_TRUE;
 					}
 					return SET_INI_TRUE;
@@ -450,13 +476,13 @@ static int checkatlas(struct atlas*a){
 	do{
 		if(a->i[l].ok!=atlas_record_ok_combined){
 			if(!(a->i[l].ok&atlas_record_ok_x))
-				elog("[%s] x - missing",a->i[l].id->i);
+				elog("[%s] x - отсутствует.",a->i[l].id->i);
 			if(!(a->i[l].ok&atlas_record_ok_y))
-				elog("[%s] y - missing",a->i[l].id->i);
+				elog("[%s] y - отсутствует.",a->i[l].id->i);
 			if(!(a->i[l].ok&atlas_record_ok_w))
-				elog("[%s] w - missing",a->i[l].id->i);
+				elog("[%s] w - отсутствует.",a->i[l].id->i);
 			if(!(a->i[l].ok&atlas_record_ok_h))
-				elog("[%s] h - missing",a->i[l].id->i);
+				elog("[%s] h - отсутствует.",a->i[l].id->i);
 			return 0;
 		}
 	}while(++l<a->n);
@@ -469,7 +495,7 @@ static enum printrw_result printrw(SDL_RWops *w,const char*fmt,...){
 	int z=SDL_vsnprintf(NULL,0,fmt,l);
 	if(z==-1){
 		va_end(l);
-		elog("output-error");
+		elog("Ошибка форматирования данных с форматирующей строкой '%s'.",fmt);
 		return printrw_output_error;
 	}
 	va_end(l);
@@ -478,11 +504,11 @@ static enum printrw_result printrw(SDL_RWops *w,const char*fmt,...){
 		case string_occupy_ok:
 			break;
 		case string_occupy_overflow_error:{
-			clog("overflow");
+			clog("Переизбыток данных.");
 			return printrw_overflow_error;
 		}
 		case string_occupy_critical_realloc_error:{
-			clog("realloc");
+			clog("Перевыделение памяти.");
 			return printrw_critical_realloc_error;
 		}
 	}
@@ -490,7 +516,7 @@ static enum printrw_result printrw(SDL_RWops *w,const char*fmt,...){
 	SDL_vsnprintf(tmpstring->i,tmpstring->n,fmt,l);
 	va_end(l);
 	if(SDL_RWwrite(w,tmpstring->i,z,1)!=1){
-		elog("write-error('%s',...)",fmt);
+		elog("Ошибка вывода данных с форматирующей строкой '%s'.",fmt);
 		return printrw_write_error;
 	}
 	return printrw_ok;
@@ -527,11 +553,11 @@ static int stripes_scan(struct stripes**s,SDL_Surface*sur,const struct atlas_rec
 		case stripes_occupy_ok:
 			break;
 		case stripes_occupy_overflow_error:{
-			clog("overflow");
+			clog("Переизбыток данных.");
 			return 0;
 		}
 		case stripes_occupy_critical_realloc_error:{
-			clog("realloc");
+			clog("Перевыделение памяти.");
 			return 0;
 		}
 	}
@@ -605,32 +631,6 @@ l_con0:;
 l_con2:;
 	}while(++x!=r.w);
 	return 1;
-}
-
-loe::list(arearects){
-	::index_type{Uint64};
-	::length{n};
-	::queue{q};
-	::array{{typeof(((struct arearects*)0)->i[0])}{i}};
-	::allstatic;
-	::first{first};
-	::last{last};
-	::prev{prev};
-	::next{next};
-	::item{{struct arearects_rect}{rect}};
-	::efirst{efirst};
-	::elast{elast};
-	::eprev{eprev};
-	::enext{enext};
-	Uint64 n,q;
-	Uint64 first,last,efirst,elast;
-	Uint32 x_origin,y_origin;
-	struct{
-		Uint64 prev,next,eprev,enext;
-		struct arearects_rect{
-			Uint32 x,h_over,v_over;
-		}rect;
-	}i[];
 }
 
 static void arearects_cut(struct arearects*a,Uint64 i){
@@ -805,16 +805,16 @@ Uint32 w,Uint32 h){
 				lzy=max.y<lzy?max.y:lzy;
 				lzox=max.x+max.w>lzox?max.x+max.w:lzox;
 				lzoy=max.y+max.h>lzoy?max.y+max.h:lzoy;
-				ilog("%"PRIu32",%"PRIu32",%"PRIu32",%"PRIu32,max.x,max.y,max.w,max.h);
-				SDL_assert(0);
+				//~ ilog("%"PRIu32",%"PRIu32",%"PRIu32",%"PRIu32,max.x,max.y,max.w,max.h);
+				//~ SDL_assert(0);
 				break;
 			}
 			case boxyhitboxes_occupy_overflow_error:{
-				clog("overflow");
+				clog("Переизбыток данных.");
 				return 0;
 			}
 			case boxyhitboxes_occupy_critical_realloc_error:{
-				clog("realloc");
+				clog("Перевыделение памяти.");
 				return 0;
 			}
 		}
@@ -869,7 +869,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		boxyheader_free(bh);
 		return 0;
 	}
-	if(printrw(enumfile,"#ifndef __%s_INCLUDED\n#define %s_INCLUDED\nenum %s{",
+	if(printrw(enumfile,"#ifndef __%s_INCLUDED\n#define %s_INCLUDED\n\nenum %s{",
 		prefix,prefix,prefix)!=printrw_ok){
 		arearects_free(a);
 		stripes_free(s);
@@ -963,7 +963,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		if(++l==pool->n)
 			break;
 		if(__builtin_add_overflow(offset,sizeof(*hb)+sizeof(hb->boxes[0])*hb->n_boxes,&offset)){
-			clog("overflow");
+			clog("Переизбыток данных.");
 			arearects_free(a);
 			stripes_free(s);
 			boxyhitboxes_free(hb);
@@ -1048,10 +1048,10 @@ int main(int i,char**v){
 		if(i>1){
 			struct atlas*pool=atlas_new(127);
 			if(!pool){
-				clog("malloc");
+				clog("Выделение памяти.");
 			}else{
 				if(!string_newout(&tmpstring,127)){
-					clog("malloc");
+					clog("Выделение памяти.");
 				}else{
 					switch(set_ini_parse_cmd((SET_INI_GROUP_IN_WORD_SET)opt_in_word_set,
 					i-1,(const char*const*)v+1,opt_report_group,opt_report_key,&pool)){
@@ -1059,7 +1059,8 @@ int main(int i,char**v){
 							if(opt_syntax_error==SET_INI_FALSE){
 								if(opt_show_help==SET_INI_TRUE || opt_show_version==SET_INI_TRUE){
 									if(opt_show_help==SET_INI_TRUE)
-										ilog("help");
+										ilog("\nИспользование$ %s опции \\[sprite1\\] x=0 y=0 w=100 h=100 [omin=1] [omax=255] \\[spriteN\\] ... \\[\\] опции\n+-------------+------------+--------------+--------------+\n|  опция №1   |  опция №2  | тип/диапазон |   описание   |\n+-------------+------------+--------------+--------------+\n|   --help    |     h      |   boolean    |   показать   |\n|             |            |              |   справку    |\n+-------------+------------+--------------+--------------+\n|  --version  |     v      |   boolean    |   показать   |\n|             |            |              |    версию    |\n+-------------+------------+--------------+--------------+\n|             |            |              |  заполнять   |\n| --no-sparse |     ns     |   boolean    |    нулями    |\n|             |            |              | пропущенные  |\n|             |            |              |    секции    |\n+-------------+------------+--------------+--------------+\n|   --image   |     i      |    string    |   вводное    |\n|             |            |              | изображение  |\n+-------------+------------+--------------+--------------+\n|             |            |              |   файл для   |\n|   --boxy    |     b      |    string    |  сохранения  |\n|             |            |              |  хитбоксов   |\n+-------------+------------+--------------+--------------+\n|             |            |              | Си-файл для  |\n|   --enum    |     e      |    string    |  сохранения  |\n|             |            |              |  энумераций  |\n+-------------+------------+--------------+--------------+\n|  --prefix   |     p      |    string    |  Си-префикс  |\n+-------------+------------+--------------+--------------+\n|             |            |              |  прочитать   |\n|   --conf    |     c      |    string    | настройки из |\n|             |            |              |  INI-файла   |\n+-------------+------------+--------------+--------------+\n|             |            |              |верхний предел|\n|--opacity-max|    omax    |int64/[0..255]|непрозрачности|\n|             |            |              |              |\n+-------------+------------+--------------+--------------+\n|--opacity-min|    omin    |int64/[0..255]|нижний предел |\n|             |            |              |непрозрачности|\n+-------------+------------+--------------+--------------+\n",v[0]);
+										ilog("\n+------------+---------------------+---------------------+\n|  Атрибуты  |    тип/диапазон     |      описание       |\n|  спрайта   |                     |                     |\n+------------+---------------------+---------------------+\n|     x      |int64/[0..4294967295]|     X-смещение      |\n+------------+---------------------+---------------------+\n|     y      |int64/[0..4294967295]|     Y-смещение      |\n+------------+---------------------+---------------------+\n|     w      |int64/[0..4294967295]|    ширина фрейма    |\n|            |                     |                     |\n+------------+---------------------+---------------------+\n|     h      |int64/[0..4294967295]|    высота фрейма    |\n|            |                     |                     |\n+------------+---------------------+---------------------+\n|            |                     |   верхний предел    |\n|    omin    |   int64/[0..255]    |   непрозрачности    |\n|            |                     |      фрейма(не      |\n|            |                     |    обязательно)     |\n+------------+---------------------+---------------------+\n|            |                     |    нижний предел    |\n|    omax    |   int64/[0..255]    |   непрозрачности    |\n|            |                     |      фрейма(не      |\n|            |                     |    обязательно)     |\n+------------+---------------------+---------------------+\n");
 									if(opt_show_version==SET_INI_TRUE)
 										ilog(PACKAGE_VERSION);
 								}else{
@@ -1077,24 +1078,24 @@ int main(int i,char**v){
 												}
 											}else{
 												if(!opt_image)
-													elog("missing input image");
+													elog("Вводное изображение не указано.");
 												if(!opt_boxy)
-													elog("missing boxy file");
+													elog("Файл для сохранения хитбоксов не указан.");
 												if(!opt_enum)
-													elog("missing c file");
+													elog("Файл для сохранения Си-перечисления не указан.");
 												if(!opt_prefix)
-													elog("missing c prefix");
+													elog("Префикс для Си-перечисления не указан.");
 											}
 										}
 									}else{
-										elog("no sprites specified");
+										elog("Не указано ни одного фрейма.");
 									}
 								}
 							}
 							break;
 						}
 						case SET_INI_PARSER_UTF8_ERROR:{
-							elog("utf-8-error");
+							elog("Ошибка UTF-8 кодировки.");
 							break;
 						}
 						case SET_INI_PARSER_CANCELLED:{
@@ -1116,7 +1117,7 @@ int main(int i,char**v){
 				atlas_free(pool);
 			}
 		}else{
-			elog("use --help");
+			elog("Параметры не указаны, используйте '--help' для получения справки.");
 		}
 		SDL_Quit();
 	}
