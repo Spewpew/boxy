@@ -12,7 +12,6 @@ loe::replace({LOE_STACK_LOG_OVERFLOW_ERROR},{clog("Переизбыток дан
 loe::replace({LOE_STACK_LOG_CRITICAL_MALLOC_ERROR},{clog("Выделение памяти.")});
 loe::replace({LOE_STACK_LOG_CRITICAL_REALLOC_ERROR},{clog("Перевыделение памяти.")});
 loe::replace({LOE_STACK_ASSERT},{SDL_assert});
-
 #include "config.h"
 #include <SDL.h>
 #include <SDL_image.h>

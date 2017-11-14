@@ -30,6 +30,9 @@ PKG_CHECK_MODULES([SDL2_IMAGE], [SDL2_image >= 2.0.1])
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
 
