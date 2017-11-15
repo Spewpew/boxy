@@ -159,7 +159,8 @@ static struct string
 	*opt_image=NULL,
 	*opt_boxy=NULL,
 	*opt_enum=NULL,
-	*opt_prefix=NULL;
+	*opt_prefix=NULL,
+	*opt_header=NULL;
 
 static Uint8
 	opt_omin=1,
@@ -357,11 +358,13 @@ set::ini_info(opt){
 			}
 			str{
 				names "--image" "i" "--boxy" "b" "--enum" "e" "--prefix" "p"
+					"--header" "r"
 				decl "struct string**ps;"
 				atts ".str={&opt_image}" ".str={&opt_image}"
 					".str={&opt_boxy}" ".str={&opt_boxy}"
 					".str={&opt_enum}" ".str={&opt_enum}"
 					".str={&opt_prefix}" ".str={&opt_prefix}"
+					".str={&opt_header}" ".str={&opt_header}"
 				onload{
 					if(t!=SET_INI_TYPE_BOOLEAN){
 						if(!k->str.ps[0]){
@@ -1058,7 +1061,7 @@ int main(int i,char**v){
 							if(opt_syntax_error==SET_INI_FALSE){
 								if(opt_show_help==SET_INI_TRUE || opt_show_version==SET_INI_TRUE){
 									if(opt_show_help==SET_INI_TRUE)
-										ilog("\nИспользование$ %s опции \\[sprite1\\] x=0 y=0 w=100 h=100 [omin=1] [omax=255] \\[spriteN\\] ... \\[\\] опции\n+-------------+------------+--------------+--------------+\n|  опция №1   |  опция №2  | тип/диапазон |   описание   |\n+-------------+------------+--------------+--------------+\n|   --help    |     h      |   boolean    |   показать   |\n|             |            |              |   справку    |\n+-------------+------------+--------------+--------------+\n|  --version  |     v      |   boolean    |   показать   |\n|             |            |              |    версию    |\n+-------------+------------+--------------+--------------+\n|             |            |              |  заполнять   |\n| --no-sparse |     ns     |   boolean    |    нулями    |\n|             |            |              | пропущенные  |\n|             |            |              |    секции    |\n+-------------+------------+--------------+--------------+\n|   --image   |     i      |    string    |   вводное    |\n|             |            |              | изображение  |\n+-------------+------------+--------------+--------------+\n|             |            |              |   файл для   |\n|   --boxy    |     b      |    string    |  сохранения  |\n|             |            |              |  хитбоксов   |\n+-------------+------------+--------------+--------------+\n|             |            |              | Си-файл для  |\n|   --enum    |     e      |    string    |  сохранения  |\n|             |            |              |  энумераций  |\n+-------------+------------+--------------+--------------+\n|  --prefix   |     p      |    string    |  Си-префикс  |\n+-------------+------------+--------------+--------------+\n|             |            |              |  прочитать   |\n|   --conf    |     c      |    string    | настройки из |\n|             |            |              |  INI-файла   |\n+-------------+------------+--------------+--------------+\n|             |            |              |верхний предел|\n|--opacity-max|    omax    |int64/[0..255]|непрозрачности|\n|             |            |              |              |\n+-------------+------------+--------------+--------------+\n|--opacity-min|    omin    |int64/[0..255]|нижний предел |\n|             |            |              |непрозрачности|\n+-------------+------------+--------------+--------------+\n",v[0]);
+										ilog("\nИспользование$ %s опции \\[sprite1\\] x=0 y=0 w=100 h=100 [omin=1] [omax=255] \\[spriteN\\] ... \\[\\] опции\n+-------------+------------+--------------+--------------+\n|  опция №1   |  опция №2  | тип/диапазон |   описание   |\n+-------------+------------+--------------+--------------+\n|   --help    |     h      |   boolean    |   показать   |\n|             |            |              |   справку    |\n+-------------+------------+--------------+--------------+\n|  --version  |     v      |   boolean    |   показать   |\n|             |            |              |    версию    |\n+-------------+------------+--------------+--------------+\n|             |            |              |  заполнять   |\n| --no-sparse |     ns     |   boolean    |    нулями    |\n|             |            |              | пропущенные  |\n|             |            |              |    секции    |\n+-------------+------------+--------------+--------------+\n|   --image   |     i      |    string    |   вводное    |\n|             |            |              | изображение  |\n+-------------+------------+--------------+--------------+\n|             |            |              |   файл для   |\n|   --boxy    |     b      |    string    |  сохранения  |\n|             |            |              |  хитбоксов   |\n+-------------+------------+--------------+--------------+\n|             |            |              | Си-файл для  |\n|   --enum    |     e      |    string    |  сохранения  |\n|             |            |              |  энумераций  |\n+-------------+------------+--------------+--------------+\n|  --prefix   |     p      |    string    |  Си-префикс  |\n+-------------+------------+--------------+--------------+\n|             |            |              |  прочитать   |\n|   --conf    |     c      |    string    | настройки из |\n|             |            |              |  INI-файла   |\n+-------------+------------+--------------+--------------+\n|             |            |              |  Си-файл со  |\n|  --header   |     r      |    string    | структурами  |\n|             |            |              |              |\n+-------------+------------+--------------+--------------+\n|             |            |              |верхний предел|\n|--opacity-max|    omax    |int64/[0..255]|непрозрачности|\n|             |            |              |              |\n+-------------+------------+--------------+--------------+\n|--opacity-min|    omin    |int64/[0..255]|нижний предел |\n|             |            |              |непрозрачности|\n+-------------+------------+--------------+--------------+\n",v[0]);
 										ilog("\n+------------+---------------------+---------------------+\n|  Атрибуты  |    тип/диапазон     |      описание       |\n|  спрайта   |                     |                     |\n+------------+---------------------+---------------------+\n|     x      |int64/[0..4294967295]|     X-смещение      |\n+------------+---------------------+---------------------+\n|     y      |int64/[0..4294967295]|     Y-смещение      |\n+------------+---------------------+---------------------+\n|     w      |int64/[0..4294967295]|    ширина фрейма    |\n|            |                     |                     |\n+------------+---------------------+---------------------+\n|     h      |int64/[0..4294967295]|    высота фрейма    |\n|            |                     |                     |\n+------------+---------------------+---------------------+\n|            |                     |   верхний предел    |\n|    omin    |   int64/[0..255]    |   непрозрачности    |\n|            |                     |      фрейма(не      |\n|            |                     |    обязательно)     |\n+------------+---------------------+---------------------+\n|            |                     |    нижний предел    |\n|    omax    |   int64/[0..255]    |   непрозрачности    |\n|            |                     |      фрейма(не      |\n|            |                     |    обязательно)     |\n+------------+---------------------+---------------------+\n");
 									if(opt_show_version==SET_INI_TRUE)
 										ilog(PACKAGE_VERSION);
@@ -1086,8 +1089,24 @@ int main(int i,char**v){
 													elog("Префикс для Си-перечисления не указан.");
 											}
 										}
-									}else{
+									}else if(!opt_header){
 										elog("Не указано ни одного фрейма.");
+									}
+									if(opt_header){
+										SDL_RWops *hdr=SDL_RWFromFile(opt_header->i,"wb");
+										if(!hdr){
+											esdl;
+										}else{
+											if(SDL_RWwrite(hdr,"#ifndef BOXY_HEADER_INCLUDED\n#define BOXY_HEADER_INCLUDED\n\nstruct boxyheader\n{\n\n  char magic[8];\n  Uint8 bigendian;\n  Uint32 width, height;\n  Uint64 n_frames, offsets[];\n} __attribute__ ((packed));\n\nstruct boxyhitboxes\n{\n\n  Uint64 n_boxes;\n  struct boxyhitboxes_rect\n  {\n    Uint32 x, y, w, h;\n  } __attribute__ ((packed)) frame, lazy, boxes[];\n} __attribute__ ((packed));\n\n#endif\n",sizeof("#ifndef BOXY_HEADER_INCLUDED\n#define BOXY_HEADER_INCLUDED\n\nstruct boxyheader\n{\n\n  char magic[8];\n  Uint8 bigendian;\n  Uint32 width, height;\n  Uint64 n_frames, offsets[];\n} __attribute__ ((packed));\n\nstruct boxyhitboxes\n{\n\n  Uint64 n_boxes;\n  struct boxyhitboxes_rect\n  {\n    Uint32 x, y, w, h;\n  } __attribute__ ((packed)) frame, lazy, boxes[];\n} __attribute__ ((packed));\n\n#endif\n")-1,1)!=1){
+												elog("Ввод данных в файл '%s'. SDL_GetError(): '%s'.",opt_header->i,SDL_GetError());
+											}else{
+												exit_code=0;
+											}
+											if(SDL_RWclose(hdr)<0){
+												elog("При закрытии файла '%s'. SDL_GetError(): '%s'.",opt_header->i,SDL_GetError());
+												exit_code=1;
+											}
+										}
 									}
 								}
 							}
@@ -1101,6 +1120,8 @@ int main(int i,char**v){
 							break;
 						}
 					}
+					if(opt_header)
+						string_free(opt_header);
 					if(opt_image)
 						string_free(opt_image);
 					if(opt_boxy)
