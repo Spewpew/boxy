@@ -1097,7 +1097,8 @@ int main(int i,char**v){
 										if(!hdr){
 											esdl;
 										}else{
-											if(SDL_RWwrite(hdr,"#ifndef BOXY_HEADER_INCLUDED\n#define BOXY_HEADER_INCLUDED\n\nstruct boxyheader\n{\n\n  char magic[8];\n  Uint8 bigendian;\n  Uint32 width, height;\n  Uint64 n_frames, offsets[];\n} __attribute__ ((packed));\n\nstruct boxyhitboxes\n{\n\n  Uint64 n_boxes;\n  struct boxyhitboxes_rect\n  {\n    Uint32 x, y, w, h;\n  } __attribute__ ((packed)) frame, lazy, boxes[];\n} __attribute__ ((packed));\n\n#endif\n",sizeof("#ifndef BOXY_HEADER_INCLUDED\n#define BOXY_HEADER_INCLUDED\n\nstruct boxyheader\n{\n\n  char magic[8];\n  Uint8 bigendian;\n  Uint32 width, height;\n  Uint64 n_frames, offsets[];\n} __attribute__ ((packed));\n\nstruct boxyhitboxes\n{\n\n  Uint64 n_boxes;\n  struct boxyhitboxes_rect\n  {\n    Uint32 x, y, w, h;\n  } __attribute__ ((packed)) frame, lazy, boxes[];\n} __attribute__ ((packed));\n\n#endif\n")-1,1)!=1){
+											static const char data[]="#ifndef BOXY_HEADER_INCLUDED\n#define BOXY_HEADER_INCLUDED\n#include <SDL.h>\n\nstruct boxyheader\n{\n\n  char magic[8];\n  Uint8 bigendian;\n  Uint32 width, height;\n  Uint64 n_frames, offsets[];\n} __attribute__ ((packed));\n\nstruct boxyhitboxes\n{\n\n  Uint64 n_boxes;\n  struct boxyhitboxes_rect\n  {\n    Uint32 x, y, w, h;\n  } __attribute__ ((packed)) frame, lazy, boxes[];\n} __attribute__ ((packed));\n\n#endif\n";
+											if(SDL_RWwrite(hdr,data,sizeof(data)-1,1)!=1){
 												elog("Ввод данных в файл '%s'. SDL_GetError(): '%s'.",opt_header->i,SDL_GetError());
 											}else{
 												exit_code=0;
