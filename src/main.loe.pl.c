@@ -871,7 +871,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		boxyheader_free(bh);
 		return 0;
 	}
-	if(printrw(enumfile,"#ifndef __%s_INCLUDED\n#define %s_INCLUDED\n\nenum %s{",
+	if(printrw(enumfile,"#ifndef __%s_INCLUDED\n#define __%s_INCLUDED\n\nenum %s{",
 		prefix,prefix,prefix)!=printrw_ok){
 		arearects_free(a);
 		stripes_free(s);
@@ -1008,7 +1008,7 @@ SDL_RWops*enumfile,const char*prefix,struct atlas*pool){
 		return 0;
 	}
 	boxyheader_free(bh);
-	return printrw(enumfile,"\n\t__%s_length\n};\n\n#endif //%s_INCLUDED",prefix,prefix)==printrw_ok;
+	return printrw(enumfile,"\n\t__%s_length\n};\n\n#endif //__%s_INCLUDED",prefix,prefix)==printrw_ok;
 }
 
 static int boxygen(const char*image,const char*boxy,
