@@ -189,6 +189,7 @@ static int slurpfile(struct string**s,const char*f){
 	s[0]->n=0;
 	switch(string_occupy(s,a)){
 		case string_occupy_ok:
+		case string_occupy_ok_new_pointer:
 			break;
 		case string_occupy_overflow_error:{
 			clog("Файл слишком большой ('%s').",f);
@@ -321,6 +322,7 @@ const void*udata){
 		.id=s,.hash=hash,.omin=opt_omin,.omax=opt_omax,.ok=0
 	})){
 		case atlas_occupy_ok:
+		case atlas_occupy_ok_new_pointer:
 			break;
 		case atlas_occupy_overflow_error:{
 			clog("Переизбыток данных.");
@@ -374,6 +376,7 @@ set::ini_info(opt){
 							k->str.ps[0]->n=0;
 							switch(string_occupy(k->str.ps,vz+1)){
 								case string_occupy_ok:
+								case string_occupy_ok_new_pointer:
 									break;
 								case string_occupy_overflow_error:{
 									clog("Переизбыток данных.");
@@ -400,7 +403,8 @@ set::ini_info(opt){
 					if(t!=SET_INI_TYPE_BOOLEAN){
 						tmpstring->n=0;
 						switch(string_occupy(&tmpstring,vz+1)){
-							case string_occupy_ok:{
+							case string_occupy_ok:
+							case string_occupy_ok_new_pointer:{
 								SDL_memcpy(tmpstring->i,v,vz);
 								tmpstring->i[vz]='\0';
 								switch(slurpfile(&tmpstring,tmpstring->i)){
@@ -504,6 +508,7 @@ static enum printrw_result printrw(SDL_RWops *w,const char*fmt,...){
 	tmpstring->n=0;
 	switch(string_occupy(&tmpstring,z+1)){
 		case string_occupy_ok:
+		case string_occupy_ok_new_pointer:
 			break;
 		case string_occupy_overflow_error:{
 			clog("Переизбыток данных.");
@@ -553,6 +558,7 @@ static int stripes_scan(struct stripes**s,SDL_Surface*sur,const struct atlas_rec
 	//~ ilog("%"PRIu32",%"PRIu32",%"PRIu32",%"PRIu32,r.x,r.y,r.w,r.h);
 	switch(stripes_occupy(s,r.w*r.h)){
 		case stripes_occupy_ok:
+		case stripes_occupy_ok_new_pointer:
 			break;
 		case stripes_occupy_overflow_error:{
 			clog("Переизбыток данных.");
@@ -647,15 +653,16 @@ static void arearects_cut(struct arearects*a,Uint64 i){
 
 static enum arearects_occupy_result areascan(struct arearects**a,
 struct stripes*s,Uint32 sw,Uint32 sx,Uint32 h_over,Uint32 v_over){
+	enum arearects_occupy_result e;
 	for(Uint32 x=sx+1;x<h_over;++x){
 		if(s->i[x+sw*a[0]->y_origin].v_over<v_over){
 			//~ if(a[0]->y_origin==91 && a[0]->x_origin==101){
 				//~ ilog("inside: %"PRIu32",%"PRIu32",%"PRIu32,sx,x,v_over);
 			//~ }
-			enum arearects_occupy_result e=arearects_append(a,(struct arearects_rect){
+			e=arearects_append(a,(struct arearects_rect){
 				.x=sx,.h_over=x,.v_over=v_over
 			});
-			if(e!=arearects_occupy_ok)
+			if(e!=arearects_occupy_ok || e!=arearects_occupy_ok_new_pointer)
 				return e;
 			return areascan(a,s,sw,x,h_over,s->i[x+sw*a[0]->y_origin].v_over);
 		}
@@ -663,9 +670,10 @@ struct stripes*s,Uint32 sw,Uint32 sx,Uint32 h_over,Uint32 v_over){
 	//~ if(a[0]->y_origin==91 && a[0]->x_origin==101){
 		//~ ilog("outside: %"PRIu32",%"PRIu32",%"PRIu32,sx,h_over,v_over);
 	//~ }
-	return arearects_append(a,(struct arearects_rect){
+	e=arearects_append(a,(struct arearects_rect){
 		.x=sx,.h_over=h_over,.v_over=v_over
 	});
+	return ((e==arearects_occupy_ok || e==arearects_occupy_ok_new_pointer)?arearects_occupy_ok:e);
 }
 
 static void arearects_v_over_lowered(struct arearects*a,Uint64 i,Uint32 v_over){
@@ -681,7 +689,7 @@ static void arearects_v_over_lowered(struct arearects*a,Uint64 i,Uint32 v_over){
 static enum arearects_occupy_result arearects_insert(struct arearects**a,
 Uint64 after,struct arearects_rect r){
 	enum arearects_occupy_result e=arearects_append(a,r);
-	if(e==arearects_occupy_ok){
+	if(e==arearects_occupy_ok || e==arearects_occupy_ok_new_pointer){
 		if(a[0]->i[after].next!=a[0]->last)
 			arearects_swap(a[0],a[0]->last,a[0]->i[after].next);
 	}
@@ -716,7 +724,7 @@ struct arearects**a,struct boxyhitboxes*b){
 					enum arearects_occupy_result e=arearects_insert(a,m,(struct arearects_rect){
 						.x=b->boxes[l].x,.h_over=a[0]->i[m].rect.h_over,.v_over=b->boxes[l].y
 					});
-					if(e!=arearects_occupy_ok)
+					if(e!=arearects_occupy_ok || e!=arearects_occupy_ok_new_pointer)
 						return e;
 					a[0]->i[m].rect.h_over=b->boxes[l].x;
 					arearects_v_over_lowered(a[0],a[0]->i[m].next,b->boxes[l].y);
@@ -802,7 +810,8 @@ Uint32 w,Uint32 h){
 			return 1;
 		}
 		switch(boxyhitboxes_push(ph,pq,max)){
-			case boxyhitboxes_occupy_ok:{
+			case boxyhitboxes_occupy_ok:
+			case boxyhitboxes_occupy_ok_new_pointer:{
 				lzx=max.x<lzx?max.x:lzx;
 				lzy=max.y<lzy?max.y:lzy;
 				lzox=max.x+max.w>lzox?max.x+max.w:lzox;
